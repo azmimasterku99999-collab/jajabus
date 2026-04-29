@@ -1,45 +1,657 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jajabus-Jadwal Jadwal Bus</title>
-  <link rel="icon" href="" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+
+  <!-- ══ PWA — Manifest & Theme ══════════════════════════ -->
+  <link rel="manifest" href="/jajabus/manifest.json">
+  <meta name="theme-color" content="#3b6ef8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0c0f1e"  media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="JajaBus">
+  <meta name="description" content="Cek jadwal bus antar kota secara real-time">
+
+  <!-- ══ iOS Safari ══════════════════════════════════════ -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JajaBus">
+  <link rel="apple-touch-icon" href="/jajabus/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/jajabus/icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/jajabus/icons/icon-144.png">
+
+  <!-- ══ Favicon ═════════════════════════════════════════ -->
+  <link rel="icon" type="image/png" sizes="96x96"  href="/jajabus/icons/icon-96.png">
+  <link rel="icon" type="image/png" sizes="32x32"  href="/jajabus/icons/icon-72.png">
+
+  <title>JajaBus – Jadwal Bus</title>
+
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #eee;
-      overflow: hidden; /*  */
+  /* ════════════════════════════════════════════════
+     THEME — Auto Light/Dark ikut setting HP
+  ════════════════════════════════════════════════ */
+  :root {
+    --bg:          #f0f4ff;
+    --surface:     #ffffff;
+    --surface2:    #f5f7ff;
+    --border:      #e0e6f5;
+    --text:        #1a2040;
+    --text2:       #4a5580;
+    --muted:       #8893b8;
+    --accent:      #3b6ef8;
+    --accent2:     #6c3bf5;
+    --accentBg:    #eef2ff;
+    --green:       #16a34a;
+    --greenBg:     #dcfce7;
+    --amber:       #b45309;
+    --amberBg:     #fef3c7;
+    --red:         #dc2626;
+    --redBg:       #fee2e2;
+    --header-from: #3b6ef8;
+    --header-to:   #6c3bf5;
+    --shadow-sm:   0 1px 8px rgba(60,80,180,.08);
+    --shadow:      0 4px 20px rgba(60,80,180,.12);
+    --radius:      16px;
+    --radius-sm:   10px;
+    --radius-btn:  12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:          #0c0f1e;
+      --surface:     #141828;
+      --surface2:    #1c2138;
+      --border:      #252d48;
+      --text:        #e4e9ff;
+      --text2:       #8a95bc;
+      --muted:       #4a5578;
+      --accent:      #6b94ff;
+      --accent2:     #9b78ff;
+      --accentBg:    #141f45;
+      --green:       #4ade80;
+      --greenBg:     #052e16;
+      --amber:       #fbbf24;
+      --amberBg:     #2d1f02;
+      --red:         #f87171;
+      --redBg:       #2d0a0a;
+      --header-from: #1e3a8a;
+      --header-to:   #3730a3;
+      --shadow-sm:   0 1px 8px rgba(0,0,0,.3);
+      --shadow:      0 4px 20px rgba(0,0,0,.4);
     }
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;
+    min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  button,select,input{font-family:inherit;font-size:inherit;color:inherit;}
 
-    .iframe-container {
-      width: 100%;
-      height: 100dvh; /* */
-      overflow: hidden;
-    }
+  /* ── Install Banner ─────────────────────────── */
+  #installBanner{
+    position:fixed;bottom:0;left:0;right:0;z-index:9999;
+    background:var(--surface);border-top:1.5px solid var(--border);
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+    display:flex;align-items:center;gap:12px;
+    box-shadow:0 -4px 24px rgba(0,0,0,.15);
+    transform:translateY(100%);
+    transition:transform .35s cubic-bezier(.34,1.2,.64,1);
+  }
+  #installBanner.show{transform:translateY(0);}
+  .ib-icon{font-size:36px;flex-shrink:0;}
+  .ib-text{flex:1;}
+  .ib-text strong{display:block;font-size:14px;font-weight:700;color:var(--text);}
+  .ib-text span{font-size:12px;color:var(--text2);}
+  .ib-actions{display:flex;gap:8px;flex-shrink:0;}
+  .btn-ib-install{
+    padding:9px 16px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;border-radius:10px;font-size:13px;font-weight:700;white-space:nowrap;
+  }
+  .btn-ib-nanti{
+    padding:9px 12px;border:1.5px solid var(--border);cursor:pointer;
+    background:transparent;color:var(--text2);border-radius:10px;font-size:13px;font-weight:600;
+  }
 
-    iframe {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
+  /* ── iOS Guide ──────────────────────────────── */
+  #iosGuide{
+    position:fixed;inset:0;z-index:10000;
+    background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+    display:flex;align-items:flex-end;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .25s;
+  }
+  #iosGuide.show{opacity:1;pointer-events:all;}
+  .ios-sheet{
+    background:var(--surface);border-radius:24px 24px 0 0;
+    padding:20px 20px calc(28px + env(safe-area-inset-bottom,0px));
+    width:100%;max-width:480px;
+  }
+  .ios-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+  .ios-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:4px;}
+  .ios-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px;}
+  .ios-steps{display:flex;flex-direction:column;gap:14px;margin-bottom:22px;}
+  .ios-step{display:flex;align-items:flex-start;gap:12px;}
+  .ios-num{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;margin-top:2px;
+    background:var(--accentBg);color:var(--accent);
+    font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  }
+  .ios-step p{font-size:13px;color:var(--text);line-height:1.6;}
+  .ios-step p b{color:var(--accent);}
+  .ios-step p em{
+    display:inline-block;background:var(--surface2);border:1px solid var(--border);
+    border-radius:6px;padding:1px 7px;font-style:normal;font-size:12px;font-weight:600;
+  }
+  .btn-ios-ok{
+    width:100%;padding:13px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;border-radius:12px;font-size:15px;font-weight:700;
+  }
+
+  /* ── Splash ─────────────────────────────────── */
+  #splash{
+    position:fixed;inset:0;z-index:8888;
+    background:linear-gradient(160deg,#3b6ef8 0%,#6c3bf5 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    transition:opacity .45s ease,visibility .45s ease;
+  }
+  #splash.gone{opacity:0;visibility:hidden;}
+  .sp-icon{font-size:76px;animation:spBounce .65s ease;}
+  @keyframes spBounce{0%{transform:scale(.4);opacity:0;}70%{transform:scale(1.12);}100%{transform:scale(1);opacity:1;}}
+  .sp-name{font-size:34px;font-weight:900;color:#fff;letter-spacing:-.5px;}
+  .sp-sub{font-size:14px;color:rgba(255,255,255,.72);}
+  .sp-bar-wrap{width:48px;height:3px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden;margin-top:10px;}
+  .sp-bar{height:100%;width:0;background:#fff;border-radius:2px;animation:spLoad 1.3s ease forwards;}
+  @keyframes spLoad{to{width:100%;}}
+
+  /* ── Header ─────────────────────────────────── */
+  .header{
+    background:linear-gradient(135deg,var(--header-from),var(--header-to));
+    position:sticky;top:0;z-index:200;
+    box-shadow:0 2px 16px rgba(59,110,248,.3);
+  }
+  .header-inner{
+    max-width:640px;margin:0 auto;
+    padding-top:calc(env(safe-area-inset-top,0px) + 12px);
+    padding-bottom:12px;padding-left:16px;padding-right:16px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-bus{font-size:30px;line-height:1;}
+  .brand-text h1{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+  .brand-text p{font-size:11px;color:rgba(255,255,255,.75);margin-top:1px;}
+  .header-right{display:flex;align-items:center;gap:10px;}
+  .header-clock{text-align:right;}
+  .clock-time{font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:.02em;line-height:1;}
+  .clock-date{font-size:10px;color:rgba(255,255,255,.7);margin-top:3px;}
+  .btn-hdr-install{
+    background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);
+    border-radius:10px;padding:6px 10px;cursor:pointer;font-size:18px;
+    transition:background .2s;
+  }
+  .btn-hdr-install:active{background:rgba(255,255,255,.35);}
+
+  /* ── Filter Panel ───────────────────────────── */
+  .filter-panel{
+    background:var(--surface);border-bottom:1px solid var(--border);
+    position:sticky;top:68px;z-index:100;box-shadow:var(--shadow-sm);
+  }
+  .filter-body{max-width:640px;margin:0 auto;padding:14px 16px 8px;display:flex;flex-direction:column;gap:10px;}
+  .f-group{display:flex;flex-direction:column;gap:5px;}
+  .f-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+  .f-select{
+    width:100%;appearance:none;-webkit-appearance:none;
+    background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%238893b8' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border:1.5px solid var(--border);color:var(--text);
+    padding:11px 38px 11px 13px;border-radius:var(--radius-sm);
+    font-size:14px;font-weight:500;cursor:pointer;transition:border-color .2s,box-shadow .2s;
+  }
+  .f-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(107,148,255,.18);}
+  .f-select:disabled{opacity:.4;cursor:default;}
+  .date-row{display:flex;align-items:center;gap:6px;}
+  .date-nav{
+    flex-shrink:0;width:34px;height:38px;background:var(--surface2);border:1.5px solid var(--border);
+    color:var(--text2);border-radius:9px;cursor:pointer;font-size:18px;
+    display:flex;align-items:center;justify-content:center;transition:all .18s;
+  }
+  .date-nav:active{transform:scale(.9);}
+  .date-pills{flex:1;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .date-pills::-webkit-scrollbar{display:none;}
+  .date-pill{
+    flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--surface2);border:1.5px solid var(--border);color:var(--text2);
+    padding:6px 12px;border-radius:20px;cursor:pointer;
+    font-size:12px;font-weight:600;line-height:1.25;white-space:nowrap;transition:all .18s;
+  }
+  .date-pill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .date-pill:active{transform:scale(.93);}
+  .pill-sub{display:block;font-size:9px;font-weight:400;opacity:.8;}
+  .search-bar{max-width:640px;margin:0 auto;padding:10px 16px 14px;}
+  .btn-cari{
+    width:100%;padding:13px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff;border-radius:var(--radius-btn);
+    font-size:15px;font-weight:700;letter-spacing:.02em;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 4px 16px rgba(107,148,255,.35);
+    transition:opacity .18s,transform .18s,box-shadow .18s;
+  }
+  .btn-cari:disabled{opacity:.45;box-shadow:none;cursor:default;}
+  .btn-cari:not(:disabled):active{transform:scale(.97);box-shadow:0 2px 8px rgba(107,148,255,.2);}
+  .btn-icon{font-size:17px;}
+
+  /* ── Main ───────────────────────────────────── */
+  .main{max-width:640px;margin:0 auto;padding:14px 12px 80px;}
+  .info-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;gap:8px;flex-wrap:wrap;
+    background:var(--surface);border:1.5px solid var(--border);
+    border-radius:var(--radius-sm);padding:9px 13px;
+  }
+  .info-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .info-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--accentBg);color:var(--accent);
+    padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;
+  }
+  .info-badge::before{
+    content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--accent);animation:blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .info-route{font-size:12px;font-weight:600;color:var(--text2);}
+  .info-right{font-size:11px;color:var(--muted);}
+  .state-box{text-align:center;padding:52px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .state-icon{font-size:52px;}
+  .state-title{font-size:18px;font-weight:700;}
+  .state-msg{font-size:13px;color:var(--text2);max-width:280px;line-height:1.7;white-space:pre-line;}
+  @keyframes shimmer{0%{background-position:-400px 0;}100%{background-position:400px 0;}}
+  .skeleton{
+    height:148px;border-radius:var(--radius);margin-bottom:10px;
+    background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);
+    background-size:400px 100%;animation:shimmer 1.2s infinite linear;
+  }
+  .hidden{display:none!important;}
+  .btn-retry{
+    margin-top:14px;padding:10px 24px;border:1.5px solid var(--accent);
+    background:transparent;color:var(--accent);border-radius:var(--radius-sm);
+    font-size:14px;font-weight:600;cursor:pointer;
+  }
+
+  /* ── Cards ──────────────────────────────────── */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .card{
+    background:var(--surface);border:1.5px solid var(--border);
+    border-radius:var(--radius);margin-bottom:10px;overflow:hidden;
+    box-shadow:var(--shadow-sm);animation:fadeUp .3s ease both;transition:box-shadow .2s;
+  }
+  .card:active{box-shadow:var(--shadow);}
+  @keyframes urgentPulse{0%,100%{border-color:rgba(248,113,113,.35);}50%{border-color:rgba(248,113,113,.8);}}
+  .card-urgent{animation:fadeUp .3s ease both,urgentPulse 1.8s ease-in-out infinite;}
+  .card-soon{border-color:rgba(251,191,36,.4);}
+  .card-stripe{height:4px;}
+  .card-inner{padding:13px 14px 12px;}
+  .card-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .card-top{margin-bottom:11px;}
+  .po-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:4px 10px 4px 8px;border-radius:20px;
+    border:1.5px solid;font-size:12px;font-weight:700;max-width:60%;overflow:hidden;
+  }
+  .po-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .kelas-badge{font-size:10px;font-weight:700;padding:4px 9px;border-radius:7px;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;}
+  .k-super{background:#f5f3ff;color:#6d28d9;}
+  .k-exec{background:var(--accentBg);color:var(--accent);}
+  .k-bisnis{background:var(--greenBg);color:var(--green);}
+  .k-eco{background:var(--surface2);color:var(--text2);}
+  @media(prefers-color-scheme:dark){
+    .k-super{background:#1e1152;color:#c4b5fd;}
+    .k-bisnis{background:var(--greenBg);color:var(--green);}
+  }
+  .route-block{
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface2);border-radius:10px;padding:11px 12px;margin-bottom:11px;
+  }
+  .route-point{flex-shrink:0;min-width:72px;}
+  .route-point.right{text-align:right;}
+  .route-time{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+  .route-city{font-size:11px;color:var(--text2);margin-top:2px;font-weight:500;}
+  .route-mid{flex:1;display:flex;align-items:center;gap:4px;min-width:0;}
+  .route-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .route-dot.green{background:var(--green);}
+  .route-line{flex:1;height:2px;background:var(--border);border-radius:1px;}
+  .route-bus{font-size:18px;flex-shrink:0;}
+  .card-bottom{flex-wrap:wrap;}
+  .card-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1;}
+  .chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text2);font-weight:500;background:var(--surface2);border-radius:6px;padding:3px 8px;}
+  .card-price-block{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+  .countdown{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;}
+  .cd-amber{background:var(--amberBg);color:var(--amber);}
+  .cd-red{background:var(--redBg);color:var(--red);}
+  .price{
+    font-size:16px;font-weight:800;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+
+  /* ── Footer ─────────────────────────────────── */
+  .footer{
+    text-align:center;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));
+    font-size:11px;color:var(--muted);border-top:1px solid var(--border);
+  }
   </style>
 </head>
 <body>
-  <div class="iframe-container">
-    <iframe
-      id="app"
-      src="https://script.google.com/macros/s/AKfycbxVaJXRzYN_4vK1pOHfSaOEqbuz7HRXhNvVt7k2gbTk2cRMpoZEF8UrC5OWTH4bKQvD/exec"
-      scrolling="yes"
-      allowfullscreen="true"
-      webkitallowfullscreen="true"
-      mozallowfullscreen="true"
-      allow="fullscreen; camera; microphone; display-capture; geolocation;">
-    </iframe>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-icon">🚌</div>
+  <div class="sp-name">JajaBus</div>
+  <div class="sp-sub">Jadwal Bus Real-Time</div>
+  <div class="sp-bar-wrap"><div class="sp-bar"></div></div>
+</div>
+
+<!-- INSTALL BANNER (Android) -->
+<div id="installBanner">
+  <div class="ib-icon">📲</div>
+  <div class="ib-text">
+    <strong>Install JajaBus</strong>
+    <span>Pasang di homescreen, buka lebih cepat!</span>
   </div>
+  <div class="ib-actions">
+    <button class="btn-ib-nanti" onclick="dismissBanner()">Nanti</button>
+    <button class="btn-ib-install" onclick="doInstall()">Install</button>
+  </div>
+</div>
+
+<!-- iOS GUIDE -->
+<div id="iosGuide" onclick="closeIos(event)">
+  <div class="ios-sheet">
+    <div class="ios-handle"></div>
+    <div class="ios-title">📲 Install JajaBus di iPhone</div>
+    <div class="ios-sub">3 langkah mudah, kurang dari 30 detik</div>
+    <div class="ios-steps">
+      <div class="ios-step">
+        <div class="ios-num">1</div>
+        <p>Ketuk tombol <b>Share</b> <em>⎦↑⎡</em> di toolbar bawah Safari</p>
+      </div>
+      <div class="ios-step">
+        <div class="ios-num">2</div>
+        <p>Scroll ke bawah, pilih <b>"Add to Home Screen"</b> / <b>"Tambahkan ke Layar Utama"</b></p>
+      </div>
+      <div class="ios-step">
+        <div class="ios-num">3</div>
+        <p>Ketuk <em>Add</em> / <em>Tambahkan</em> di pojok kanan atas — selesai! 🎉</p>
+      </div>
+    </div>
+    <button class="btn-ios-ok" onclick="closeIos()">Mengerti, tutup panduan</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-bus">🚌</span>
+      <div class="brand-text"><h1>JajaBus</h1><p>Jadwal Bus Real-Time</p></div>
+    </div>
+    <div class="header-right">
+      <div class="header-clock">
+        <div class="clock-time" id="clockTime">--:--:--</div>
+        <div class="clock-date" id="clockDate"></div>
+      </div>
+      <button id="btnHdrInstall" class="btn-hdr-install hidden" onclick="showInstall()" title="Install App">📲</button>
+    </div>
+  </div>
+</header>
+
+<!-- FILTER -->
+<div class="filter-panel">
+  <div class="filter-body">
+    <div class="f-group">
+      <div class="f-label">Kota Keberangkatan</div>
+      <select id="selAsal" class="f-select" onchange="onAsalChange()">
+        <option value="">— Pilih kota asal —</option>
+      </select>
+    </div>
+    <div class="f-group">
+      <div class="f-label">Kota Tujuan</div>
+      <select id="selTujuan" class="f-select" onchange="onTujuanChange()" disabled>
+        <option value="">— Pilih kota tujuan —</option>
+      </select>
+    </div>
+    <div class="f-group">
+      <div class="f-label">Tanggal Keberangkatan</div>
+      <div class="date-row">
+        <button class="date-nav" onclick="shiftDate(-1)">‹</button>
+        <div class="date-pills" id="datePills"></div>
+        <button class="date-nav" onclick="shiftDate(1)">›</button>
+      </div>
+    </div>
+  </div>
+  <div class="search-bar">
+    <button id="btnCari" class="btn-cari" onclick="doSearch()" disabled>
+      <span class="btn-icon">🔍</span>
+      <span id="btnCariLabel">Pilih kota asal & tujuan</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+  <div id="statePrompt" class="state-box">
+    <div class="state-icon">🗺️</div>
+    <div class="state-title">Mau ke mana?</div>
+    <div class="state-msg">Pilih kota keberangkatan dan tujuan,<br>lalu tekan Cari Jadwal</div>
+  </div>
+  <div id="stateLoading" class="hidden">
+    <div class="skeleton"></div><div class="skeleton" style="opacity:.7"></div><div class="skeleton" style="opacity:.45"></div>
+  </div>
+  <div id="stateEmpty" class="state-box hidden">
+    <div class="state-icon">🔍</div>
+    <div class="state-title">Tidak ada jadwal</div>
+    <div class="state-msg" id="emptyMsg"></div>
+  </div>
+  <div id="stateError" class="state-box hidden">
+    <div class="state-icon">⚠️</div>
+    <div class="state-title">Gagal memuat data</div>
+    <div class="state-msg" id="errorMsg"></div>
+    <button class="btn-retry" onclick="doSearch()">Coba lagi</button>
+  </div>
+  <div id="infoBar" class="info-bar hidden">
+    <div class="info-left">
+      <span class="info-badge" id="infoBadge">0 jadwal</span>
+      <span class="info-route" id="infoRoute"></span>
+    </div>
+    <div class="info-right" id="infoTime"></div>
+  </div>
+  <div id="cardList"></div>
+</main>
+
+<footer class="footer">
+  © 2026 JajaBus &nbsp;·&nbsp;
+  <span style="cursor:pointer;color:var(--accent);font-weight:600;" onclick="showInstall()">📲 Install App</span>
+</footer>
+
+<script>
+// ══ SERVICE WORKER REGISTER ══════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/jajabus/sw.js')
+      .then(function(reg) { console.log('SW registered:', reg.scope); })
+      .catch(function(err) { console.warn('SW failed:', err); });
+  });
+}
+
+// ══ INSTALL LOGIC ════════════════════════════════════════
+var deferredPrompt = null;
+var isIOS          = /iphone|ipad|ipod/i.test(navigator.userAgent);
+var isStandalone   = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('btnHdrInstall').classList.remove('hidden');
+  if (!localStorage.getItem('ib_dismissed')) setTimeout(function(){ document.getElementById('installBanner').classList.add('show'); }, 2500);
+});
+
+window.addEventListener('appinstalled', function() {
+  document.getElementById('installBanner').classList.remove('show');
+  document.getElementById('btnHdrInstall').classList.add('hidden');
+  deferredPrompt = null;
+});
+
+function dismissBanner() {
+  document.getElementById('installBanner').classList.remove('show');
+  localStorage.setItem('ib_dismissed','1');
+}
+function doInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(function(){deferredPrompt=null;}); }
+}
+function showInstall() {
+  if (isStandalone) return;
+  if (isIOS) { document.getElementById('iosGuide').classList.add('show'); }
+  else if (deferredPrompt) { doInstall(); }
+  else { document.getElementById('iosGuide').classList.add('show'); }
+}
+function closeIos(e) {
+  if (!e || e.target === document.getElementById('iosGuide')) document.getElementById('iosGuide').classList.remove('show');
+}
+
+// iOS: tampilkan panduan sekali setelah 3 detik
+if (isIOS && !isStandalone && !localStorage.getItem('ios_shown')) {
+  setTimeout(function(){ document.getElementById('iosGuide').classList.add('show'); localStorage.setItem('ios_shown','1'); }, 3000);
+}
+
+// ══ SPLASH ═══════════════════════════════════════════════
+window.addEventListener('load', function() {
+  setTimeout(function(){ document.getElementById('splash').classList.add('gone'); }, 1400);
+});
+
+// ══ APP STATE ════════════════════════════════════════════
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxVaJXRzYN_4vK1pOHfSaOEqbuz7HRXhNvVt7k2gbTk2cRMpoZEF8UrC5OWTH4bKQvD/exec';
+var S = { kotaList:[], asalId:'', tujuanId:'', dateOff:0, dateStr:'', result:null };
+
+document.addEventListener('DOMContentLoaded', function() {
+  S.dateStr = toDateStr(offsetDate(0));
+  startClock(); renderDatePills(); loadKota();
+  setInterval(function(){ if(S.result) doSearch(); }, 60000);
+});
+
+function startClock() {
+  function tick(){
+    var n=new Date();
+    document.getElementById('clockTime').textContent=pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+    document.getElementById('clockDate').textContent=fmtDate(n);
+  } tick(); setInterval(tick,1000);
+}
+
+// ══ DATA LOAD (fetch via JSONP/URL karena ini standalone HTML) ══
+function loadKota() {
+  fetch(GAS_URL + '?action=getInitData')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      S.kotaList = data.kotaList || [];
+      fillSel('selAsal', S.kotaList, '— Pilih kota asal —');
+    })
+    .catch(function(e){ showError('Gagal load kota: '+e); });
+}
+
+function doSearch() {
+  if(!S.asalId||!S.tujuanId) return;
+  showLoading();
+  var url = GAS_URL+'?action=getJadwal&asal='+encodeURIComponent(S.asalId)+'&tujuan='+encodeURIComponent(S.tujuanId)+'&tanggal='+encodeURIComponent(S.dateStr);
+  fetch(url)
+    .then(function(r){ return r.json(); })
+    .then(function(res){
+      if(res.error){ showError(res.error); return; }
+      S.result=res; renderCards(res);
+    })
+    .catch(function(e){ showError('Gagal memuat: '+e); });
+}
+
+function fillSel(id,list,ph){
+  var s=document.getElementById(id);
+  s.innerHTML='<option value="">'+esc(ph)+'</option>';
+  list.forEach(function(k){ s.innerHTML+='<option value="'+esc(k.id)+'">'+esc(k.nama)+'</option>'; });
+}
+function onAsalChange(){
+  S.asalId=document.getElementById('selAsal').value; S.tujuanId='';
+  var st=document.getElementById('selTujuan');
+  if(!S.asalId){st.innerHTML='<option value="">— Pilih kota tujuan —</option>';st.disabled=true;}
+  else{fillSel('selTujuan',S.kotaList.filter(function(k){return k.id!==S.asalId;}),'— Pilih kota tujuan —');st.disabled=false;st.value='';}
+  updateBtn();
+}
+function onTujuanChange(){ S.tujuanId=document.getElementById('selTujuan').value; updateBtn(); }
+function updateBtn(){
+  var b=document.getElementById('btnCari'),l=document.getElementById('btnCariLabel');
+  if(!S.asalId){b.disabled=true;l.textContent='Pilih kota asal dulu';}
+  else if(!S.tujuanId){b.disabled=true;l.textContent='Pilih kota tujuan dulu';}
+  else{b.disabled=false;l.textContent='Cari Jadwal';}
+}
+function renderDatePills(){
+  var w=document.getElementById('datePills'); w.innerHTML='';
+  var lm={'-1':'Kemarin','0':'Hari ini','1':'Besok','2':'Lusa'};
+  [S.dateOff-1,S.dateOff,S.dateOff+1,S.dateOff+2].forEach(function(o){
+    var d=offsetDate(o),lbl=lm[String(o)]||(d.getDate()+'/'+(d.getMonth()+1)),sub=d.getDate()+'/'+(d.getMonth()+1);
+    var btn=document.createElement('button');
+    btn.className='date-pill'+(o===S.dateOff?' active':'');
+    btn.innerHTML=lbl+(lm[String(o)]?'<span class="pill-sub">'+sub+'</span>':'');
+    btn.onclick=function(){selectDate(o);}; w.appendChild(btn);
+  });
+}
+function selectDate(o){S.dateOff=o;S.dateStr=toDateStr(offsetDate(o));renderDatePills();}
+function shiftDate(d){selectDate(S.dateOff+d);}
+
+function renderCards(res){
+  var list=res.jadwal,now=new Date(),jamNow=now.getHours()*60+now.getMinutes(),isToday=S.dateOff===0;
+  var asal=nkota(S.asalId),tujuan=nkota(S.tujuanId);
+  document.getElementById('infoBadge').textContent=list.length+' jadwal';
+  document.getElementById('infoRoute').textContent=asal+' → '+tujuan+' · '+res.tanggal;
+  document.getElementById('infoTime').textContent='Update: '+res.jamServer;
+  document.getElementById('infoBar').classList.remove('hidden');
+  if(!list||!list.length){showEmpty('Tidak ada bus dari '+asal+' ke '+tujuan+'\npada '+res.tanggal+'.\nCoba pilih tanggal lain.');return;}
+  showCards();
+  var html='';
+  list.forEach(function(j,idx){
+    var m=j.totalMenit-jamNow,iU=isToday&&m>=0&&m<=30,iS=isToday&&m>=0&&m<=60;
+    var clr=pcol(j.po),kb=kinfo(j.kelas);
+    html+='<div class="card'+(iU?' card-urgent':iS?' card-soon':'')+'" style="animation-delay:'+Math.min(idx*.05,.5)+'s">';
+    html+='<div class="card-stripe" style="background:'+clr+'"></div><div class="card-inner">';
+    html+='<div class="card-row card-top"><div class="po-badge" style="background:'+clr+'18;border-color:'+clr+'44;color:'+clr+'"><span class="po-dot" style="background:'+clr+'"></span>'+esc(j.po)+'</div>';
+    html+='<span class="kelas-badge '+kb.cls+'">'+kb.icon+' '+kb.label+'</span></div>';
+    html+='<div class="route-block"><div class="route-point"><div class="route-time">'+esc(j.jam)+'</div><div class="route-city">'+esc(j.kotaAsal)+'</div></div>';
+    html+='<div class="route-mid"><div class="route-dot" style="background:'+clr+'"></div><div class="route-line"></div><span class="route-bus">🚌</span><div class="route-line"></div><div class="route-dot green"></div></div>';
+    html+='<div class="route-point right"><div class="route-time">'+esc(j.jamTiba)+'</div><div class="route-city">'+esc(j.kotaTujuan)+'</div></div></div>';
+    html+='<div class="card-row card-bottom"><div class="card-chips"><span class="chip">🚐 '+esc(j.armada)+'</span>';
+    if(j.ket&&j.ket!=='-'&&j.ket!=='') html+='<span class="chip">📌 '+esc(j.ket)+'</span>';
+    html+='</div><div class="card-price-block">';
+    if(isToday&&m>=0){ var ct=m<1?'Berangkat sekarang!':fmtCD(m); html+='<span class="countdown '+(iU?'cd-red':'cd-amber')+'">⏱ '+ct+'</span>'; }
+    html+='<div class="price">Rp '+fmtRp(j.harga)+'</div></div></div></div></div>';
+  });
+  document.getElementById('cardList').innerHTML=html;
+}
+
+function showLoading(){show('stateLoading');hide('statePrompt');hide('stateEmpty');hide('stateError');document.getElementById('cardList').innerHTML='';document.getElementById('infoBar').classList.add('hidden');}
+function showCards(){hide('stateLoading');hide('statePrompt');hide('stateEmpty');hide('stateError');}
+function showEmpty(m){hide('stateLoading');hide('statePrompt');show('stateEmpty');hide('stateError');document.getElementById('emptyMsg').textContent=m;document.getElementById('cardList').innerHTML='';}
+function showError(m){hide('stateLoading');hide('statePrompt');hide('stateEmpty');show('stateError');document.getElementById('errorMsg').textContent=m;document.getElementById('cardList').innerHTML='';document.getElementById('infoBar').classList.add('hidden');}
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+function pad(n){return n<10?'0'+n:''+n;}
+function toDateStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function offsetDate(n){var d=new Date();d.setDate(d.getDate()+n);return d;}
+function fmtDate(d){var H=['Min','Sen','Sel','Rab','Kam','Jum','Sab'],B=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];return H[d.getDay()]+' '+d.getDate()+' '+B[d.getMonth()];}
+function fmtRp(n){return Number(n).toLocaleString('id-ID');}
+function fmtCD(m){var h=Math.floor(m/60),mm=m%60;return h>0?h+' jam '+mm+' mnt lagi':mm+' menit lagi';}
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function nkota(id){var k=S.kotaList.find(function(x){return x.id===id;});return k?k.nama:id;}
+var PC=['#e74c3c','#2980b9','#27ae60','#8e44ad','#e67e22','#16a085','#c0392b','#2c3e50','#d35400','#1abc9c','#3498db','#e91e63','#ff5722','#795548','#009688'];
+function pcol(n){var h=0;for(var i=0;i<(n||'').length;i++)h=n.charCodeAt(i)+((h<<5)-h);return PC[Math.abs(h)%PC.length];}
+function kinfo(k){var kl=(k||'').toLowerCase();if(kl.indexOf('super')>=0)return{icon:'⭐',label:'Super Eksekutif',cls:'k-super'};if(kl.indexOf('eksekutif')>=0)return{icon:'✦',label:'Eksekutif',cls:'k-exec'};if(kl.indexOf('bisnis')>=0)return{icon:'◆',label:'Bisnis',cls:'k-bisnis'};return{icon:'·',label:k||'Ekonomi',cls:'k-eco'};}
+</script>
 </body>
 </html>
